@@ -1,4 +1,5 @@
 "use client";
+// Force Sync: Updated bed data structure
 
 import { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
