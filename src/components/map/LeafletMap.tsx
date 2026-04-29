@@ -84,9 +84,9 @@ export default function LeafletMap() {
                     <div className="flex justify-between items-center mt-1 border-t pt-2">
                       <span className="text-xs text-gray-600 font-medium">ICU Beds:</span>
                       <span className={`text-xs font-bold leading-none py-1 px-2 rounded ${
-                        (item as Hospital).beds.icu > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        (item as Hospital).beds.icu.available > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                       }`}>
-                        {(item as Hospital).beds.icu} Available
+                        {(item as Hospital).beds.icu.available} Available
                       </span>
                     </div>
                   )}
