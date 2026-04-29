@@ -4,6 +4,8 @@ import { useState } from "react";
 import LandingHero from "@/components/layout/LandingHero";
 import AuthModal from "@/components/auth/AuthModal";
 import Dashboard from "@/components/dashboard/Dashboard";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -20,8 +22,17 @@ export default function Home() {
     setIsAuthenticated(true);
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
+    setIsAuthenticated(false);
+  };
+
   if (isAuthenticated) {
-    return <Dashboard />;
+    return <Dashboard onLogout={handleLogout} />;
   }
 
   return (

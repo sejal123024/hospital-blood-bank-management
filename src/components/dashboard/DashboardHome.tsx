@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Building2, 
@@ -26,6 +26,31 @@ interface DashboardHomeProps {
 export default function DashboardHome({ onSearch }: DashboardHomeProps) {
   const [activeTab, setActiveTab] = useState("hospitals");
   const fetchData = useStore((state) => state.fetchData);
+  const [liveHospitals, setLiveHospitals] = useState<any[]>([]);
+  const [liveEmergency, setLiveEmergency] = useState<any[]>([]);
+
+  // Fetch real-time data from Excel for the dashboard cards
+  useEffect(() => {
+    const fetchLiveData = async () => {
+      try {
+        const [hospRes, emerRes] = await Promise.all([
+          fetch(`/api/hospitals?t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`/api/ambulance?t=${Date.now()}`, { cache: 'no-store' })
+        ]);
+        const hospitals = await hospRes.json();
+        const emergency = await emerRes.json();
+        setLiveHospitals(hospitals);
+        setLiveEmergency(emergency);
+      } catch (e) {
+        console.error("Failed to fetch live dashboard data:", e);
+      }
+    };
+    fetchLiveData();
+
+    // Auto-refresh every 10 seconds for real-time feel
+    const interval = setInterval(fetchLiveData, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSearchClick = () => {
     fetchData(activeTab);
@@ -37,6 +62,26 @@ export default function DashboardHome({ onSearch }: DashboardHomeProps) {
     { id: "icu", label: "ICU Beds", icon: <Bed size={24} /> },
     { id: "blood", label: "Blood Banks", icon: <Droplet size={24} /> },
     { id: "emergency", label: "Emergency", icon: <ShieldAlert size={24} className="text-accentRed animate-pulse" /> },
+  ];
+
+  // Hospital image URLs from public sources
+  const hospitalImages: Record<string, string> = {
+    "Lilavati Hospital and Research Centre": "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=600&q=80",
+    "Kokilaben Dhirubhai Ambani Hospital": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&q=80",
+    "Hinduja Hospital": "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=600&q=80",
+    "Nanavati Super Speciality Hospital": "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=600&q=80",
+    "Breach Candy Hospital": "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=600&q=80",
+  };
+
+  const defaultImages = [
+    "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=600&q=80",
+    "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&q=80",
+    "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=600&q=80",
+    "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=600&q=80",
+    "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=600&q=80",
+    "https://images.unsplash.com/photo-1632833239869-a37e3a5806d2?w=600&q=80",
+    "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&q=80",
+    "https://images.unsplash.com/photo-1504439468489-c8920d796a29?w=600&q=80",
   ];
 
   return (
@@ -118,8 +163,8 @@ export default function DashboardHome({ onSearch }: DashboardHomeProps) {
                   <span className="text-sm font-semibold text-gray-400 group-hover:text-cyanGlow flex items-center gap-2 mb-1">
                     <MapPin size={16} /> CURRENT LOCATION
                   </span>
-                  <div className="text-3xl font-bold text-white mb-1">New York</div>
-                  <div className="text-sm text-gray-500">NY, Times Square, Sector 4</div>
+                  <div className="text-3xl font-bold text-white mb-1">Mumbai</div>
+                  <div className="text-sm text-gray-500">Maharashtra, Bandra West</div>
                 </div>
 
                 {/* Swap Icon */}
@@ -140,18 +185,20 @@ export default function DashboardHome({ onSearch }: DashboardHomeProps) {
                   <div className="text-sm text-gray-500">Must be within 5 miles radius</div>
                 </div>
 
-                {/* Date/Time */}
+                {/* Date/Time - Live */}
                 <div className="lg:w-1/4 p-4 md:p-6 hover:bg-white/5 transition-colors cursor-pointer group">
                   <span className="text-sm font-semibold text-gray-400 group-hover:text-cyanGlow flex items-center gap-2 mb-1">
-                    <Calendar size={16} /> ETA / DEPARTURE
+                    <Calendar size={16} /> LIVE TIME
                   </span>
                   <div className="text-xl md:text-3xl font-bold text-white mb-1">
-                    19 <span className="text-xl">Mar '26</span>
+                    {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                   </div>
-                  <div className="text-sm text-gray-500">Thursday, 10:45 PM</div>
+                  <div className="text-sm text-gray-500">
+                    {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
 
-                {/* Passengers/Patients */}
+                {/* Patients/Patients */}
                 <div className="lg:w-1/4 p-4 md:p-6 hover:bg-white/5 transition-colors cursor-pointer group">
                   <span className="text-sm font-semibold text-gray-400 group-hover:text-cyanGlow flex items-center gap-2 mb-1">
                     <User size={16} /> PATIENTS & TYPE
@@ -193,37 +240,74 @@ export default function DashboardHome({ onSearch }: DashboardHomeProps) {
       {/* MMT Style Handpicked Collections & Offers below the fold */}
       <div className="max-w-7xl mx-auto px-4 mt-8 space-y-12 relative z-10">
         
-        {/* Urgent Requirements Section */}
+        {/* Live Emergency Services Status - Real-time from Excel */}
         <section>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold text-white drop-shadow-md">Critical Alerts & Requirements</h2>
-            <div className="flex gap-2">
-              <button className="w-10 h-10 rounded-full border border-white/20 bg-deepBlue/50 text-white flex items-center justify-center hover:bg-cyanGlow hover:text-deepBlue hover:border-cyanGlow transition-colors"><ChevronLeft size={20}/></button>
-              <button className="w-10 h-10 rounded-full border border-white/20 bg-deepBlue/50 text-white flex items-center justify-center hover:bg-cyanGlow hover:text-deepBlue hover:border-cyanGlow transition-colors"><ChevronRight size={20}/></button>
+            <div>
+              <h2 className="text-3xl font-bold text-white drop-shadow-md">Live Emergency Services</h2>
+              <p className="text-sm text-gray-400 mt-1">Real-time status from Mumbai Emergency Directory • Auto-refreshes every 10s</p>
+            </div>
+            <div className="flex gap-2 items-center">
+              <span className="flex items-center gap-2 text-xs text-green-400 font-bold bg-green-500/10 border border-green-500/30 px-3 py-1.5 rounded-lg">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                {liveEmergency.filter((e: any) => e.available).length} Available
+              </span>
+              <span className="flex items-center gap-2 text-xs text-red-400 font-bold bg-red-500/10 border border-red-500/30 px-3 py-1.5 rounded-lg">
+                {liveEmergency.filter((e: any) => !e.available).length} Unavailable
+              </span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="glass-panel group overflow-hidden rounded-2xl border border-glass-border hover:border-accentRed/50 transition-all cursor-pointer bg-black/40 shadow-lg relative h-[250px]">
-                <div className="absolute top-0 right-0 m-4 bg-white text-deepBlue text-[10px] font-black uppercase px-2 py-1 rounded-full z-10 tracking-widest shadow-md">
-                  Priority 1
+            {(liveEmergency.length > 0 ? liveEmergency.slice(0, 8) : []).map((item: any, idx: number) => (
+              <motion.div 
+                key={item.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="glass-panel group overflow-hidden rounded-2xl border border-glass-border hover:border-cyanGlow/50 transition-all cursor-pointer bg-black/40 shadow-lg relative p-5 flex flex-col justify-between min-h-[200px]"
+              >
+                {/* Status indicator */}
+                <div className="flex justify-between items-start">
+                  <div className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full tracking-widest shadow-md ${
+                    item.available 
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                      : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                  }`}>
+                    {item.available ? '✅ Available' : '🔴 Unavailable'}
+                  </div>
+                  <span className="text-[10px] text-gray-500 font-bold uppercase">{item.vehicleType}</span>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-deepBlue via-deepBlue/60 to-transparent z-0"></div>
-                <div className="absolute inset-x-0 bottom-0 p-6 z-10">
-                  <p className="text-xs text-accentRed font-bold mb-1 uppercase tracking-widest flex items-center gap-1.5"><ShieldAlert size={14}/> MASS CASUALTY</p>
-                  <h3 className="text-xl font-bold text-white mb-2 leading-snug">Multiple Vehicle Collision on I-405</h3>
-                  <p className="text-sm text-gray-300 line-clamp-2">Requesting minimum 4 ICU beds, severe trauma surgeons on standby, and O- blood units.</p>
+                
+                <div className="mt-auto">
+                  <h3 className="text-base font-bold text-white mb-1 leading-snug group-hover:text-cyanGlow transition-colors">{item.name}</h3>
+                  <p className="text-xs text-gray-400 flex items-center gap-1">
+                    <MapPin size={12} /> {item.location}
+                  </p>
+                  {item.contact && item.contact !== "Unknown Address" && (
+                    <p className="text-[11px] text-gray-500 mt-1.5 line-clamp-1">{item.contact}</p>
+                  )}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
+
+          {liveEmergency.length === 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1,2,3,4].map(n => (
+                <div key={n} className="min-h-[200px] bg-white/5 animate-pulse rounded-2xl border border-white/10"></div>
+              ))}
+            </div>
+          )}
         </section>
 
-        {/* Top Rated Hospitals Collections styled like MMT Collections */}
+        {/* Top Rated Hospitals Collections - Real-time from Excel with images */}
         <section>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold text-white drop-shadow-md">Top Rated Healthcare Networks</h2>
+            <div>
+              <h2 className="text-3xl font-bold text-white drop-shadow-md">Top Rated Healthcare Networks</h2>
+              <p className="text-sm text-gray-400 mt-1">Live hospital data from Mumbai Healthcare Directory</p>
+            </div>
             <div className="flex gap-2">
               <button className="w-10 h-10 rounded-full border border-white/20 bg-deepBlue/50 text-white flex items-center justify-center hover:bg-cyanGlow hover:text-deepBlue hover:border-cyanGlow transition-colors"><ChevronLeft size={20}/></button>
               <button className="w-10 h-10 rounded-full border border-white/20 bg-deepBlue/50 text-white flex items-center justify-center hover:bg-cyanGlow hover:text-deepBlue hover:border-cyanGlow transition-colors"><ChevronRight size={20}/></button>
@@ -231,28 +315,60 @@ export default function DashboardHome({ onSearch }: DashboardHomeProps) {
           </div>
 
           <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-            {[
-              { title: "Level 1 Trauma Centers", sub: "Fully equipped for severe emergencies", img: "bg-gradient-to-br from-cyan-900 to-deepBlue" },
-              { title: "Specialized Cardiac Units", sub: "Top ranked cardiology departments", img: "bg-gradient-to-br from-blue-900 to-indigo-900" },
-              { title: "Pediatric Emergency", sub: "Dedicated 24/7 children's care", img: "bg-gradient-to-br from-teal-900 to-emerald-900" },
-              { title: "Regional Blood Drives", sub: "Participate in local donation camps", img: "bg-gradient-to-br from-red-900 to-black" },
-              { title: "Maternity Centers", sub: "High-risk pregnancy specialized", img: "bg-gradient-to-br from-purple-900 to-violet-900" },
-            ].map((collection, idx) => (
-              <div 
-                key={idx} 
-                className={`min-w-[280px] h-[320px] rounded-2xl relative overflow-hidden group cursor-pointer ${collection.img} border border-glass-border shadow-xl hover:shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all shrink-0`}
-              >
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-overlay"></div>
-                
-                <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-3 py-1 rounded-lg">
-                  Top {idx + 3} List
-                </div>
-                
-                <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black via-black/80 to-transparent pt-12">
-                  <h3 className="text-xl font-bold text-white mb-2 leading-tight group-hover:text-cyanGlow transition-colors">{collection.title}</h3>
-                  <p className="text-sm text-gray-300 group-hover:text-white transition-colors">{collection.sub}</p>
-                </div>
-              </div>
+            {(liveHospitals.length > 0 ? liveHospitals : []).map((hospital: any, idx: number) => {
+              const imgUrl = hospitalImages[hospital.name] || defaultImages[idx % defaultImages.length];
+              return (
+                <motion.div 
+                  key={hospital.id}
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="min-w-[280px] h-[320px] rounded-2xl relative overflow-hidden group cursor-pointer border border-glass-border shadow-xl hover:shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all shrink-0"
+                  onClick={() => {
+                    fetchData("hospitals");
+                    onSearch("hospitals");
+                  }}
+                >
+                  {/* Real hospital image */}
+                  <img 
+                    src={imgUrl}
+                    alt={hospital.name}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  
+                  {/* Top badge */}
+                  <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-3 py-1 rounded-lg z-10">
+                    Top Rated
+                  </div>
+
+                  {/* Bed availability badge */}
+                  <div className="absolute top-4 right-4 z-10">
+                    <div className={`text-[10px] font-black px-2.5 py-1 rounded-lg backdrop-blur-md border ${
+                      hospital.beds?.icu > 0 
+                        ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                        : 'bg-red-500/20 text-red-400 border-red-500/30'
+                    }`}>
+                      ICU: {hospital.beds?.icu || 0}
+                    </div>
+                  </div>
+                  
+                  {/* Info overlay */}
+                  <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black via-black/90 to-transparent pt-16 z-10">
+                    <h3 className="text-lg font-bold text-white mb-1 leading-tight group-hover:text-cyanGlow transition-colors">{hospital.name}</h3>
+                    <p className="text-sm text-gray-300 flex items-center gap-1 mb-2">
+                      <MapPin size={12} /> {hospital.location}
+                    </p>
+                    <div className="flex gap-3 text-[11px] font-bold">
+                      <span className="text-cyanGlow bg-cyanGlow/10 px-2 py-0.5 rounded">General: {hospital.beds?.general || 0}</span>
+                      <span className="text-gray-400">{hospital.distance}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+
+            {liveHospitals.length === 0 && [1,2,3,4,5].map(n => (
+              <div key={n} className="min-w-[280px] h-[320px] bg-white/5 animate-pulse rounded-2xl border border-white/10 shrink-0"></div>
             ))}
           </div>
         </section>

@@ -65,30 +65,45 @@ export default function SearchResults({ onBack, searchType }: SearchResultsProps
         </div>
 
         {/* Dynamic Details Area Based on Structure */}
-        <div className="bg-white/5 rounded-lg p-3 grid grid-cols-2 gap-2 border border-white/5">
+        <div className={`bg-white/5 rounded-lg p-3 grid gap-2 border border-white/5 ${isBloodBank ? 'grid-cols-4' : 'grid-cols-2'}`}>
           {isHospital && (
-            <>
-               <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-500 uppercase font-bold">ICU Beds</span>
-                  <span className={`text-sm font-bold ${(item as Hospital).beds.icu > 0 ? 'text-green-400' : 'text-accentRed'}`}>
-                    {(item as Hospital).beds.icu} Available
-                  </span>
-               </div>
-               <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-500 uppercase font-bold">General Beds</span>
-                  <span className="text-sm font-bold text-gray-300">{(item as Hospital).beds.general} Total</span>
-               </div>
-            </>
+            <div className="col-span-2 grid grid-cols-3 gap-y-3 gap-x-2">
+              {[
+                { label: "ICU", key: "icu" },
+                { label: "General", key: "general" },
+                { label: "Emergency", key: "emergency" },
+                { label: "Pediatric", key: "pediatric" },
+                { label: "Oxygen", key: "oxygen" },
+                { label: "Ventilator", key: "ventilator" }
+              ].map(bed => {
+                const b = (item as Hospital).beds[bed.key as keyof Hospital['beds']];
+                return (
+                  <div key={bed.key} className="flex flex-col border-r border-white/5 last:border-0">
+                    <span className="text-[9px] text-cyanGlow/70 uppercase font-bold tracking-tight">{bed.label}</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-sm font-bold ${b.available > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {b.available}
+                      </span>
+                      <span className="text-[10px] text-gray-500">/ {b.total}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
-          {isBloodBank && Object.entries((item as BloodBank).blood_inventory).map(([type, status]) => (
-            <div key={type} className="flex flex-col">
-              <span className="text-[10px] text-gray-500 uppercase font-bold">Type {type}</span>
-              <span className={`text-xs font-bold ${status === 'Critical' ? 'text-accentRed' : status === 'Low' ? 'text-orange-400' : 'text-green-400'}`}>
-                {status}
-              </span>
-            </div>
-          ))}
+          {isBloodBank && Object.entries((item as BloodBank).blood_inventory).map(([type, count]) => {
+            const num = Number(count) || 0;
+            const colorClass = num > 20 ? 'text-green-400' : num > 5 ? 'text-orange-400' : 'text-accentRed';
+            return (
+              <div key={type} className="flex flex-col">
+                <span className="text-[10px] text-gray-500 uppercase font-bold">Type {type}</span>
+                <span className={`text-xs font-bold ${colorClass}`}>
+                  {num} Units
+                </span>
+              </div>
+            );
+          })}
 
           {isAmbulance && (
             <>
@@ -106,9 +121,11 @@ export default function SearchResults({ onBack, searchType }: SearchResultsProps
           )}
         </div>
 
-        {/* Action Buttons */}
         <div className="flex gap-3 mt-1">
-          <button className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-cyanGlow/80 to-blue-500/80 hover:from-cyanGlow hover:to-blue-500 text-deepBlue text-sm font-bold rounded-lg transition-all shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.4)]">
+          <button 
+            onClick={() => window.open(item.mapLink, '_blank')}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-cyanGlow/80 to-blue-500/80 hover:from-cyanGlow hover:to-blue-500 text-deepBlue text-sm font-bold rounded-lg transition-all shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.4)]"
+          >
             {isAmbulance ? <HeartPulse size={16} /> : <Navigation size={16} />}
             {isAmbulance ? "Dispatch Unit" : "Request Route"}
           </button>

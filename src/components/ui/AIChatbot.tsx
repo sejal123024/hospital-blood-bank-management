@@ -10,21 +10,43 @@ export default function AIChatbot() {
     { role: "bot", content: "Hi! I'm your LifeLink Assistant. How can I rapidly connect you with healthcare resources today?" }
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
-    setMessages([...messages, { role: "user", content: input }]);
+    const userMessage = input;
+    const newMessages = [...messages, { role: "user" as const, content: userMessage }];
+    setMessages(newMessages);
     setInput("");
+    setIsLoading(true);
 
-    // Mock bot response
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+
+      if (!res.ok) throw new Error("Failed to get response");
+      
+      const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        { role: "bot", content: "Searching the nearest available facilities... I found 3 level-1 trauma centers within 5 miles. Do you need immediate ambulance dispatch?" }
+        { role: "bot" as const, content: data.reply || "I encountered an error." }
       ]);
-    }, 1000);
+    } catch (error) {
+      console.error(error);
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot" as const, content: "Sorry, I am having trouble connecting right now." }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -122,15 +144,20 @@ export default function AIChatbot() {
                 type="text" 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Where do you need help?"
-                className="w-full bg-black/40 border border-glass-border rounded-full py-2.5 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-cyanGlow/50 placeholder-gray-500 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]"
+                placeholder={isLoading ? "Thinking..." : "Where do you need help?"}
+                disabled={isLoading}
+                className="w-full bg-black/40 border border-glass-border rounded-full py-2.5 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-cyanGlow/50 placeholder-gray-500 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] disabled:opacity-50"
               />
               <button 
                 type="submit"
                 className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-cyanGlow rounded-full flex items-center justify-center text-deepBlue disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition-all shadow-[0_0_10px_rgba(0,229,255,0.4)]"
-                disabled={!input.trim()}
+                disabled={!input.trim() || isLoading}
               >
-                <Send size={14} className="ml-0.5" />
+                {isLoading ? (
+                  <div className="w-3 h-3 rounded-full border-2 border-deepBlue border-t-transparent animate-spin ml-0.5"></div>
+                ) : (
+                  <Send size={14} className="ml-0.5" />
+                )}
               </button>
             </form>
           </motion.div>

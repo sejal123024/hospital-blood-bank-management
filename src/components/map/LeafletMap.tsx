@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css";
 import { useStore, Hospital, BloodBank, Ambulance } from "../../data/store";
 
 export default function LeafletMap() {
-  const centerPosition: [number, number] = [40.7128, -74.0060]; // Base NYC Coordinate
+  const centerPosition: [number, number] = [19.0760, 72.8777]; // Base Mumbai Coordinate
   const { searchResults } = useStore();
   const mapRef = useRef<L.Map | null>(null);
 
@@ -60,7 +60,7 @@ export default function LeafletMap() {
           <Popup>
             <div className="font-sans text-deepBlue">
               <strong className="text-sm">Your Location</strong><br />
-              <span className="text-xs text-gray-500">NY, Times Square, Sector 4</span>
+              <span className="text-xs text-gray-500">Mumbai, Maharashtra</span>
             </div>
           </Popup>
         </Marker>
@@ -116,10 +116,14 @@ export default function LeafletMap() {
                       </span>
                     </div>
                   )}
-                  
-                  <a href={`tel:${item.contact}`} className="mt-3 w-full block text-center bg-blue-600 text-white text-[10px] font-bold uppercase py-1.5 rounded-md hover:bg-blue-700 transition">
-                    Call: {item.contact}
-                  </a>
+                  <div className="flex gap-2 w-full mt-3">
+                    <a href={`tel:${item.contact}`} className="flex-1 block text-center bg-blue-600 text-white text-[10px] font-bold uppercase py-1.5 rounded-md hover:bg-blue-700 transition">
+                      Call
+                    </a>
+                    <a href={item.mapLink} target="_blank" rel="noopener noreferrer" className="flex-1 block text-center bg-cyan-600 text-white text-[10px] font-bold uppercase py-1.5 rounded-md hover:bg-cyan-700 transition">
+                      Map
+                    </a>
+                  </div>
                 </div>
               </Popup>
             </Marker>

@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { UserCircle, Search, Map as MapIcon, Activity } from "lucide-react";
+import { Search, Map as MapIcon, LogOut, Settings } from "lucide-react";
 
 // Components
 import DashboardHome from "./DashboardHome";
 import SearchResults from "./SearchResults";
+import AdminHub from "./AdminHub";
 import AIChatbot from "../ui/AIChatbot";
 
-export default function Dashboard() {
-  const [view, setView] = useState<"home" | "search">("home");
+interface DashboardProps {
+  onLogout: () => void;
+}
+
+export default function Dashboard({ onLogout }: DashboardProps) {
+  const [view, setView] = useState<"home" | "search" | "admin">("home");
   const [searchType, setSearchType] = useState<string>("hospitals");
 
   const handleSearch = (type: string) => {
@@ -53,33 +58,25 @@ export default function Dashboard() {
             </div>
           </button>
           
-          <button className="hidden lg:flex items-center gap-2 bg-black/50 border border-white/10 px-4 py-1.5 rounded-lg hover:bg-white/10 hover:border-cyanGlow/50 transition-colors group relative overflow-hidden">
-            <Activity size={16} className="text-gray-400 group-hover:text-cyanGlow" />
-            <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-cyanGlow rounded-full animate-pulse border border-deepBlue m-1"></div>
+          <button 
+            onClick={() => { setView("admin"); window.scrollTo({ top: 0 }); }}
+            className="hidden md:flex items-center gap-2 bg-black/50 border border-white/10 px-4 py-1.5 rounded-lg hover:bg-white/10 hover:border-cyanGlow/50 transition-colors group"
+          >
+            <Settings size={16} className="text-gray-400 group-hover:text-cyanGlow" />
             <div className="text-left flex flex-col">
-              <span className="text-[10px] font-bold text-gray-400 uppercase">Command Centers</span>
-              <span className="text-xs text-white font-black hover:text-cyanGlow transition-colors">Infrastructure</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase">Manage Hub</span>
+              <span className="text-xs text-white font-black hover:text-cyanGlow transition-colors">Admin Panel</span>
             </div>
           </button>
 
-          <button className="flex items-center gap-2 bg-gradient-to-r from-cyanGlow/20 to-deepBlue border border-cyanGlow hover:from-cyanGlow hover:to-blue-500 hover:text-deepBlue px-4 py-1.5 rounded-lg transition-all ml-4 group">
-            <div className="p-1 rounded bg-deepBlue/50 text-cyanGlow group-hover:bg-black/50 group-hover:text-white transition-colors">
-              <UserCircle size={16} className="stroke-[2.5]" />
-            </div>
-            <div className="text-left flex flex-col pr-2">
-              <span className="text-[10px] font-bold text-cyanGlow group-hover:text-deepBlue/70 uppercase">Online</span>
-              <span className="text-xs text-white font-black group-hover:text-deepBlue transition-colors">Dr. Sarah Jensen</span>
-            </div>
+          <button 
+            onClick={onLogout}
+            className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 hover:bg-red-500 hover:border-red-500 px-4 py-1.5 rounded-lg transition-all group"
+          >
+            <LogOut size={16} className="text-red-400 group-hover:text-white" />
+            <span className="text-xs text-red-400 font-bold group-hover:text-white transition-colors">Logout</span>
           </button>
-          
-          {/* Country / Currency Mock (Like MMT) */}
-          <div className="hidden sm:flex border-l border-white/20 pl-4 items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded">
-            <div className="text-right flex flex-col pr-1">
-              <span className="text-[10px] text-gray-400">Region</span>
-              <span className="text-xs text-white font-bold inline-flex items-center gap-1">NYC <span>▾</span></span>
-            </div>
-            <span className="text-xs font-bold text-cyanGlow">ENG</span>
-          </div>
+
         </div>
       </header>
 
@@ -87,8 +84,10 @@ export default function Dashboard() {
       <main className="flex-1 w-full flex flex-col relative z-0">
         {view === "home" ? (
           <DashboardHome onSearch={handleSearch} />
-        ) : (
+        ) : view === "search" ? (
           <SearchResults searchType={searchType} onBack={() => setView("home")} />
+        ) : (
+          <AdminHub onBack={() => setView("home")} />
         )}
       </main>
 
