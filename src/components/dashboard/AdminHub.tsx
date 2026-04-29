@@ -344,7 +344,7 @@ export default function AdminHub({ onBack }: AdminHubProps) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">API Key (Optional)</label>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">API Key </label>
                 <input 
                   type="password" 
                   value={addKey} onChange={e => setAddKey(e.target.value)}
